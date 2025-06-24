@@ -1,0 +1,48 @@
+import { serve } from "bun";
+import index from "./index.html";
+
+const server = serve({
+  port: process.env.PIXELGROVE_WEBAPP_DEV_PORT || 3000,
+  routes: {
+    // Serve index.html for all unmatched routes.
+    "/*": index,
+
+    "/api/hello": {
+      async GET(_) {
+        return Response.json({
+          message: "Hello, world!",
+          method: "GET",
+        });
+      },
+      async PUT(_) {
+        return Response.json({
+          message: "Hello, world!",
+          method: "PUT",
+        });
+      },
+      async POST(_) {
+        return Response.json({
+          message: "Hello, world!",
+          method: "POST",
+        });
+      },
+    },
+
+    "/api/hello/:name": async (req) => {
+      const name = req.params.name;
+      return Response.json({
+        message: `Hello, ${name}!`,
+      });
+    },
+  },
+
+  development: process.env.NODE_ENV !== "production" && {
+    // Enable browser hot reloading in development
+    hmr: true,
+
+    // Echo console logs from the browser to the server
+    console: true,
+  },
+});
+
+console.log(`🚀 Server running at ${server.url}`);
