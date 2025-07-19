@@ -5,6 +5,14 @@ import logo from "./logo.svg";
 import reactLogo from "./react.svg";
 
 export function App() {
+  const login = async () => {
+    await fetch("/login", {
+      method: "GET",
+      mode: "no-cors",
+      redirect: "follow",
+    });
+  };
+
   return (
     <div className="app">
       <div className="logo-container">
@@ -16,6 +24,7 @@ export function App() {
       <p>
         Edit <code>src/App.tsx</code> and save to test HMR
       </p>
+      <a href="/login">Login</a>
       <p>Did it work?</p>
       <APITester />
     </div>

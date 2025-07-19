@@ -31,3 +31,6 @@ go.work.sum
 # Dev files
 scratch/
 *.log
+
+# Other files
+.DS_Store
