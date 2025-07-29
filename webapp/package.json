@@ -7,8 +7,8 @@
   "module": "src/index.tsx",
   "scripts": {
     "dev": "dotenvx run -f ../.env -- bun --hot src/index.tsx",
-    "release": "bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
-    "start": "NODE_ENV=production bun src/index.tsx",
+    "start": "NODE_ENV=production dotenvx run -f ../.env -- bun src/index.tsx",
+    "release": "bun run ./scripts/build.ts",
     "format": "prettier --write .",
     "lint": "eslint ."
   },

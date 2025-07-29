@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"math/rand/v2"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -20,8 +21,10 @@ type server struct {
 	AuthConfig
 }
 
+const oauthRedirectPattern = "/auth/callback"
+
 var conf = &oauth2.Config{
-	RedirectURL: "http://localhost:4815/auth/callback",
+	RedirectURL: "http://localhost:4815" + oauthRedirectPattern,
 	Scopes:      []string{"email", "profile"},
 	Endpoint:    google.Endpoint,
 }
@@ -48,7 +51,7 @@ func Serve() {
 	mux.HandleFunc("/login", s.handlerLogin)
 	// mux.HandleFunc("POST /login", s.handlerLogin)
 	mux.HandleFunc("POST /logout", handlerLogout)
-	mux.HandleFunc("/auth/callback", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(oauthRedirectPattern, func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("method " + r.Method)
 		code := r.URL.Query().Get("code")
 		slog.Info("code " + code)
@@ -75,7 +78,51 @@ func Serve() {
 			return
 		}
 		slog.Info(string(body))
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	})
+	mux.HandleFunc("GET /events", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(200)
+		if rand.IntN(2) == 0 {
+			w.Write([]byte(`[
+				{
+					"id": 1,
+					"name": "e1",
+					"host": 1,
+					"topic": "cheese"
+				},
+				{
+					"id": 2,
+					"name": "e1",
+					"host": 1,
+					"topic": "plants"
+				},
+				{
+					"id": 3,
+					"name": "event boi",
+					"host": 3,
+					"topic": "cars"
+				},
+				{
+					"id": 4,
+					"name": "abc",
+					"host": 2,
+					"topic": "letters"
+				},
+				{
+					"id": 5,
+					"name": "asdf",
+					"host": 1,
+					"topic": "keyboards"
+				}
+			]`))
+		} else {
+			w.Write([]byte("[]"))
+		}
+		slog.Info("responding to events!")
+	})
+
+	var client http.Handler
 
 	if s.IsDev {
 		webappPort := os.Getenv("PIXELGROVE_WEBAPP_DEV_PORT")
@@ -88,8 +135,13 @@ func Serve() {
 			slog.Error("failed to set up client dev proxy", "error", err)
 			os.Exit(1)
 		}
-		mux.Handle("/", httputil.NewSingleHostReverseProxy(rp))
+
+		client = httputil.NewSingleHostReverseProxy(rp)
+	} else {
+		client = http.FileServer(http.Dir("./webapp/dist"))
 	}
+
+	mux.Handle("/", client)
 
 	server := &http.Server{
 		Handler: mux,
@@ -130,6 +182,16 @@ func NewAuth() (AuthConfig, error) {
 
 	return cfg, nil
 }
+
+// {
+//   "id": "111261313293035164056",
+//   "email": "tadmccorkle@gmail.com",
+//   "verified_email": true,
+//   "name": "Tad McCorkle",
+//   "given_name": "Tad",
+//   "family_name": "McCorkle",
+//   "picture": "https://lh3.googleusercontent.com/a/ACg8ocI_4U5G3NGVKlTo5DUwxNVRl1m6CjPNuj6KLfA_3SjqTF3Q8Q=s96-c"
+// }
 
 func (s *server) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	// decoder := json.NewDecoder(r.Body)

@@ -1,18 +1,12 @@
 import { APITester } from "./APITester";
+import { EventList } from "./EventList";
 import "./index.css";
+import { Login } from "./Login";
 
 import logo from "./logo.svg";
 import reactLogo from "./react.svg";
 
 export function App() {
-  const login = async () => {
-    await fetch("/login", {
-      method: "GET",
-      mode: "no-cors",
-      redirect: "follow",
-    });
-  };
-
   return (
     <div className="app">
       <div className="logo-container">
@@ -20,13 +14,9 @@ export function App() {
         <img src={reactLogo} alt="React Logo" className="logo react-logo" />
       </div>
 
-      <h1>Bun + React</h1>
-      <p>
-        Edit <code>src/App.tsx</code> and save to test HMR
-      </p>
-      <a href="/login">Login</a>
-      <p>Did it work?</p>
+      <Login />
       <APITester />
+      <EventList />
     </div>
   );
 }

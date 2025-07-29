@@ -10,19 +10,19 @@ const server = serve({
     "/api/hello": {
       async GET(_) {
         return Response.json({
-          message: "Hello, world!",
+          message: "Hello, GET!",
           method: "GET",
         });
       },
       async PUT(_) {
         return Response.json({
-          message: "Hello, world!",
+          message: "Hello, PUT!",
           method: "PUT",
         });
       },
       async POST(_) {
         return Response.json({
-          message: "Hello, world!",
+          message: "Hello, POST!",
           method: "POST",
         });
       },
