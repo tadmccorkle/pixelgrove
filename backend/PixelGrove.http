@@ -1,0 +1,6 @@
+@PixelGrove_HostAddress = http://localhost:4815
+
+GET {{PixelGrove_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

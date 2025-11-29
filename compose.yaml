@@ -1,0 +1,6 @@
+﻿services:
+  minimalapi:
+    image: pixelgrove
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
