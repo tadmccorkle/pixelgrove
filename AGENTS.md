@@ -4,27 +4,19 @@
 
 Pixel Grove is a full-stack web application for sharing digital photo albums.
 
-- **Backend**: The backend is a minimal API written in C# that targets .NET 10. 
-- **Frontend**: The frontend is a single-page app built using Bun, React, TypeScript, Tailwind CSS, and Shadcn/Radix UI.
-- **Auth**: The backend is designed to support multi-scheme authentication using cookies (web app), JWT bearer tokens (other apps), and API keys.
-- **Database**: The database will be a PostgreSQL instance, but the backend can also use an in-memory database during development (this won't persist between runs). The backend uses EF Core for an ORM.
+- **Backend**: Minimal API in C# targeting .NET 10 (`backend/`)
+- **Frontend**: Single-page app using Bun, React, TypeScript, Tailwind CSS, and Shadcn/Radix UI (`webapp/`)
+- **Auth**: Multi-scheme authentication (cookies, JWT bearer tokens, API keys)
+- **Database**: PostgreSQL (or in-memory for development)
 
 ## Directory Structure
 
-- Minimal API backend: `backend/`
-- Web app frontend: `webapp/`
+- `backend/` - Minimal API backend
+- `webapp/` - Web app frontend
 
 ## Commands
 
 - **Full-Stack Run**: `docker-compose up`
-- **Backend Commands** (executed from the `backend/` directory)
-  - **Build**: `dotnet build`
-  - **Run**: `dotnet run`
-- **Frontend Commands** (executed from the `frontend/` directory)
-  - **Build**: `bun install && bun build`
-  - **Run**: `bun install && bun dev`
-  - **Lint**: `bun lint`
-  - **Format**: `bun format`
 
 ## Important Development Notes
 
