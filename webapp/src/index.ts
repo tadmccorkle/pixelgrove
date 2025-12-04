@@ -2,7 +2,7 @@ import { serve } from "bun";
 import index from "./index.html";
 
 const server = serve({
-  port: process.env.PIXELGROVE_WEBAPP_DEV_PORT || 3000,
+  port: process.env.PIXELGROVE_WEBAPP_DEV_PORT || 3001,
   routes: {
     "/*": index,
 
