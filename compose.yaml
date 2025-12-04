@@ -19,5 +19,8 @@ services:
     image: pixelgrove_frontend:dev
     expose:
       - "3001"
+    volumes:
+      - ./webapp/src:/app/src
+      - ./webapp/styles:/app/styles
     environment:
       PIXELGROVE_WEBAPP_DEV_PORT: 3001
