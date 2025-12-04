@@ -3,18 +3,20 @@
 services:
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
+    image: pixelgrove_backend:dev
     ports:
       - "4815:8080"
     environment:
-      Dev__WebApp__Port: 3001
-      Dev__Browser__Port: 4815
+      Dev__Web__ServerUrl: http://frontend:3001
+      Dev__Web__BrowserUrl: http://localhost:4815
 
   frontend:
     build:
-      context: ./webapp
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: webapp/Dockerfile
+    image: pixelgrove_frontend:dev
     expose:
       - "3001"
     environment:

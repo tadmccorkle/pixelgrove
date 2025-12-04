@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "dotenvx run -f ../.env -- bun --hot src/index.ts",
+    "dev": "bun --hot src/index.ts",
+    "dev:env": "dotenvx run -f ../.env --ignore=MISSING_ENV_FILE -- bun --hot src/index.ts",
     "start": "NODE_ENV=production bun src/index.ts",
     "build": "bun run build.ts --outdir ../backend/wwwroot",
     "format": "prettier --write .",

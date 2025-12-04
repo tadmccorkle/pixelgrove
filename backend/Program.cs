@@ -122,10 +122,9 @@ if (isDev)
     {
         options.AddDefaultPolicy(policy =>
         {
-            policy.WithOrigins("http://localhost:4815", "http://localhost:3001")
-                .AllowCredentials()
-                .AllowAnyHeader()
-                .AllowAnyMethod();
+            if (builder.Configuration["Dev:Web:BrowserUrl"] is { } browserUrl) policy.WithOrigins(browserUrl);
+            if (builder.Configuration["Dev:Web:ServerUrl"] is { } serverUrl) policy.WithOrigins(serverUrl);
+            policy.AllowCredentials().AllowAnyHeader().AllowAnyMethod();
         });
     });
 
@@ -143,7 +142,13 @@ if (isDev)
                 ClusterId = "devCluster",
                 Destinations = new Dictionary<string, DestinationConfig>
                 {
-                    { "default", new DestinationConfig { Address = "http://localhost:3001" } }
+                    {
+                        "default",
+                        new DestinationConfig
+                        {
+                            Address = builder.Configuration["Dev:Web:ServerUrl"] ?? "http://localhost:3001"
+                        }
+                    }
                 },
                 HttpRequest = new ForwarderRequestConfig { ActivityTimeout = TimeSpan.MaxValue },
             }

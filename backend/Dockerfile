@@ -9,8 +9,8 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["backend/PixelGrove.csproj", "PixelGrove/"]
 RUN dotnet restore "PixelGrove/PixelGrove.csproj"
-COPY . .
-WORKDIR "/src/PixelGrove"
+WORKDIR /src/PixelGrove
+COPY backend/ .
 RUN dotnet build "./PixelGrove.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
