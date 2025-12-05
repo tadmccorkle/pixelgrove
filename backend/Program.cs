@@ -186,7 +186,7 @@ app.MapGet("/auth/login", (string? provider, string? returnUrl) =>
     };
 
     return Results.Challenge(new() { RedirectUri = returnUrl ?? "/", }, [scheme]);
-});
+}).AddEndpointFilter<CsrfEndpointFilter>();
 
 app.MapPost("/auth/logout", async context =>
 {
