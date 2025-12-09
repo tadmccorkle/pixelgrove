@@ -1,36 +1,75 @@
+import { LogOut } from "lucide-react";
+
 import { useAuth, authLogout } from "./auth-context";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+function getInitials(name: string | undefined): string {
+  if (!name) return "?";
+  return (
+    name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "?"
+  );
+}
 
 export function HomePage() {
   const { state: auth, dispatch: authDispatch } = useAuth();
+
   return (
-    <div className="bg-slate-50 min-h-screen">
-      <header className="bg-white shadow-sm">
-        <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-xl font-bold text-slate-800">Pixel Grove</h1>
-            <div className="flex items-center space-x-4">
-              <span className="text-slate-600">Hello, {auth.user?.name}</span>
-              <button
-                type="button"
-                onClick={() => authLogout(authDispatch)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer"
-              >
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <header className="border-b bg-card">
+        <div className="container flex h-16 items-center justify-between">
+          <span className="text-lg font-semibold tracking-tight">
+            Pixel Grove
+          </span>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2">
+                <Avatar className="size-8">
+                  <AvatarFallback>
+                    {getInitials(auth.user?.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm text-muted-foreground">
+                  {auth.user?.name}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => authLogout(authDispatch)}>
+                <LogOut />
                 Logout
-              </button>
-            </div>
-          </div>
-        </nav>
-      </header>
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-semibold text-slate-700 mb-6">
-          Your Photo Gallery
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {/* Placeholder for photo grid */}
-          <div className="bg-white rounded-lg shadow-md aspect-square flex items-center justify-center">
-            <p className="text-slate-400">Your images will appear here</p>
-          </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+      </header>
+
+      <main className="container flex-1 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Photo Gallery</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              <div className="flex aspect-square items-center justify-center rounded-md border border-dashed bg-muted/30 text-sm text-muted-foreground">
+                Your images will appear here
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

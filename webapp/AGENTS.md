@@ -14,7 +14,7 @@ Single-page application with a clean, minimal UI built with:
 All commands should be executed from this directory (`webapp/`).
 
 - **Install**: `bun install`
-- **Build**: `bun install && bun build`
+- **Build**: `bun install && bun run build`
 - **Run**: `bun install && bun dev`
 - **Lint**: `bun lint`
 - **Format**: `bun format`

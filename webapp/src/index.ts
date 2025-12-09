@@ -34,7 +34,7 @@ const routes = {
           },
         };
       })()
-    : ({} as any)),
+    : {}),
 };
 
 const server = serve({
@@ -47,6 +47,6 @@ const server = serve({
     // Echo console logs from the browser to the server
     console: true,
   },
-});
+} as Parameters<typeof serve>[0]);
 
 console.log(`🚀 ${isDev ? "Dev server" : "Server"} running at ${server.url}`);
