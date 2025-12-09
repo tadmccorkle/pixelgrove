@@ -1,22 +1,7 @@
-interface User {
-  name: string;
-  email: string;
-}
+import { useAuth, authLogout } from "./auth-context";
 
-interface HomePageProps {
-  user: User;
-  logout: () => void;
-}
-
-export function HomePage({ user, logout }: HomePageProps) {
-  const lo = async () => {
-    const response = await fetch("/auth/logout", {
-      method: "POST",
-    });
-    if (response.ok) {
-      logout();
-    }
-  };
+export function HomePage() {
+  const { state: auth, dispatch: authDispatch } = useAuth();
   return (
     <div className="bg-slate-50 min-h-screen">
       <header className="bg-white shadow-sm">
@@ -24,13 +9,14 @@ export function HomePage({ user, logout }: HomePageProps) {
           <div className="flex justify-between items-center py-4">
             <h1 className="text-xl font-bold text-slate-800">Pixel Grove</h1>
             <div className="flex items-center space-x-4">
-              <span className="text-slate-600">Hello, {user.name}</span>
-              <a
-                onClick={lo}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+              <span className="text-slate-600">Hello, {auth.user?.name}</span>
+              <button
+                type="button"
+                onClick={() => authLogout(authDispatch)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer"
               >
                 Logout
-              </a>
+              </button>
             </div>
           </div>
         </nav>

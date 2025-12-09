@@ -1,64 +1,32 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { APITester } from "./APITester";
-import { useState, useEffect } from "react";
 import { LandingPage } from "./LandingPage";
 import { HomePage } from "./HomePage";
+import { useAuth } from "./auth-context";
+
 import "./index.css";
 
-import logo from "./logo.svg";
-import reactLogo from "./react.svg";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
-function getCsrfToken() {
-  const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
-  return match ? match[1] : null;
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div className="fixed top-0 left-0 right-0 bg-red-600 text-white px-4 py-2 text-center text-sm">
+      {message}
+    </div>
+  );
 }
 
 export function App() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { state: auth } = useAuth();
 
-  const logout = () => {
-    setUser(null);
-  };
+  const errorBanner = auth.error ? <ErrorBanner message={auth.error} /> : null;
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch("/api/users/me", {
-          headers: {
-            "X-XSRF-TOKEN": getCsrfToken() || "",
-          },
-        });
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-        } else if (response.status === 401) {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+  if (auth.user) {
+    return (
+      <>
+        {errorBanner}
+        <HomePage />
+      </>
+    );
+  }
 
-    fetchUser();
-  }, []);
-
-  if (loading) {
+  if (auth.isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p>Loading...</p>
@@ -66,39 +34,12 @@ export function App() {
     );
   }
 
-  return user ? <HomePage user={user} logout={logout} /> : <LandingPage />;
-
-  // return (
-  //   <div className="container mx-auto p-8 text-center relative z-10">
-  //     <div className="flex justify-center items-center gap-8 mb-8">
-  //       <img
-  //         src={logo}
-  //         alt="Bun Logo"
-  //         className="h-36 p-6 transition-all duration-300 hover:drop-shadow-[0_0_2em_#646cffaa] scale-120"
-  //       />
-  //       <img
-  //         src={reactLogo}
-  //         alt="React Logo"
-  //         className="h-36 p-6 transition-all duration-300 hover:drop-shadow-[0_0_2em_#61dafbaa] [animation:spin_20s_linear_infinite]"
-  //       />
-  //     </div>
-  //     <Card>
-  //       <CardHeader className="gap-4">
-  //         <CardTitle className="text-3xl font-bold">Bun + React</CardTitle>
-  //         <CardDescription>
-  //           Edit{" "}
-  //           <code className="rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono">
-  //             src/App.tsx
-  //           </code>{" "}
-  //           and save to test HMR
-  //         </CardDescription>
-  //       </CardHeader>
-  //       <CardContent>
-  //         <APITester />
-  //       </CardContent>
-  //     </Card>
-  //   </div>
-  // );
+  return (
+    <>
+      {errorBanner}
+      <LandingPage />
+    </>
+  );
 }
 
 export default App;

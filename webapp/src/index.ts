@@ -1,35 +1,46 @@
 import { serve } from "bun";
 import index from "./index.html";
 
+const isDev = process.env.NODE_ENV !== "production";
+
+const routes = {
+  "/*": index,
+  ...(isDev
+    ? (() => {
+        let authenticated = false;
+        return {
+          "/auth/login": {
+            async GET() {
+              authenticated = true;
+              return Response.redirect("/");
+            },
+          },
+          "/auth/logout": {
+            async POST() {
+              authenticated = false;
+              return Response.redirect("/");
+            },
+          },
+          "/api/users/me": {
+            async GET() {
+              return authenticated
+                ? Response.json({
+                    id: "0",
+                    name: "Test User",
+                    email: "user@test.com",
+                  })
+                : new Response("Unauthorized", { status: 401 });
+            },
+          },
+        };
+      })()
+    : ({} as any)),
+};
+
 const server = serve({
   port: process.env.PIXELGROVE_WEBAPP_DEV_PORT || 3001,
-  routes: {
-    "/*": index,
-
-    "/api/hello": {
-      async GET(_) {
-        return Response.json({
-          message: "Hello, world!",
-          method: "GET",
-        });
-      },
-      async PUT(_) {
-        return Response.json({
-          message: "Hello, world!",
-          method: "PUT",
-        });
-      },
-    },
-
-    "/api/hello/:name": async (req) => {
-      const name = req.params.name;
-      return Response.json({
-        message: `Hello, ${name}!`,
-      });
-    },
-  },
-
-  development: process.env.NODE_ENV !== "production" && {
+  routes,
+  development: isDev && {
     // Enable browser hot reloading in development
     hmr: true,
 
@@ -38,4 +49,4 @@ const server = serve({
   },
 });
 
-console.log(`🚀 Server running at ${server.url}`);
+console.log(`🚀 ${isDev ? "Dev server" : "Server"} running at ${server.url}`);

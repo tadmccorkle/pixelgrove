@@ -2,7 +2,7 @@
 
 ## Overview
 
-Single-page application built with:
+Single-page application with a clean, minimal UI built with:
 
 - **Runtime**: Bun
 - **Framework**: React with TypeScript
