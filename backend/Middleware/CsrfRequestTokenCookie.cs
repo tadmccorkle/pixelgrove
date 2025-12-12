@@ -20,7 +20,7 @@ internal class CsrfRequestTokenCookie
         var tokens = this.antiforgery.GetAndStoreTokens(context);
         if (tokens.RequestToken is not null)
         {
-            context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken, new()
+            context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken, new CookieOptions
             {
                 HttpOnly = false,
             });

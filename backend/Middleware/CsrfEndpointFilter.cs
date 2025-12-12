@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Csm.PixelGrove.Middleware;
 
-internal class CsrfEndpointFilter : IEndpointFilter
+internal partial class CsrfEndpointFilter : IEndpointFilter
 {
     private readonly ILogger logger;
     private readonly IAntiforgery antiforgery;
@@ -28,11 +28,14 @@ internal class CsrfEndpointFilter : IEndpointFilter
             }
             catch (AntiforgeryValidationException ex)
             {
-                this.logger.LogError("Invalid antiforgery cookie: {ExMessage}", ex.Message);
+                this.LogInvalidAntiforgeryCookie(ex.Message);
                 return Results.Unauthorized();
             }
         }
 
         return await next(context);
     }
+
+    [LoggerMessage(LogLevel.Error, "Invalid antiforgery cookie: {exMessage}")]
+    partial void LogInvalidAntiforgeryCookie(string exMessage);
 }

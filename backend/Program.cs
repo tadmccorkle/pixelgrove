@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using Csm.PixelGrove;
 using Csm.PixelGrove.Middleware;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -16,105 +15,14 @@ using Microsoft.Extensions.Hosting;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Forwarder;
 
-const string DefaultScheme = "MultiAuth";
-const string CookieScheme = "Cookie";
-const string BearerScheme = "Bearer";
-const string ApiKeyScheme = "ApiKey";
-
 var builder = WebApplication.CreateBuilder(args);
 var isDev = builder.Environment.IsDevelopment();
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("App Database"));
+builder.Services.AddScoped<GoogleOAuthEvents>();
 
 builder.Services.AddOpenApi();
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = DefaultScheme;
-        options.DefaultChallengeScheme = DefaultScheme;
-    })
-    .AddCookie(CookieScheme, options =>
-    {
-        options.Cookie.Name = "auth";
-        options.LoginPath = "/login";
-        options.LogoutPath = "/auth/logout";
-    })
-    // TODO(tad): add jwt bearer token auth
-    // TODO(tad): add api-key auth
-    .AddPolicyScheme(DefaultScheme, "Cookie or Header", options =>
-    {
-        options.ForwardDefaultSelector = context =>
-        {
-            if (context.Request.Headers.TryGetValue("Authorization", out var authHeader) && authHeader.Count > 0)
-            {
-                var authType = authHeader.ToString();
-                if (authType.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-                {
-                    // return BearerScheme;
-                }
-
-                if (authType.StartsWith("ApiKey ", StringComparison.OrdinalIgnoreCase))
-                {
-                    // return ApiKeyScheme;
-                }
-            }
-
-            return CookieScheme;
-        };
-    })
-    .AddGoogle(options =>
-    {
-        options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
-        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
-        options.CallbackPath = "/auth/login/callback/google";
-
-        options.Events.OnTicketReceived = async context =>
-        {
-            var principal = context.Principal!;
-            var googleId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-            var account = await db.Accounts.AsNoTracking()
-                .Include(account => account.User)
-                .FirstOrDefaultAsync(a => a.Provider == "Google" && a.ProviderId == googleId);
-            var user = account?.User;
-
-            if (user is null)
-            {
-                var name = principal.FindFirstValue(ClaimTypes.Name);
-                var email = principal.FindFirstValue(ClaimTypes.Email);
-
-                var newUser = db.Users.Add(new()
-                {
-                    Name = name,
-                    Email = email,
-                });
-                db.Accounts.Add(new()
-                {
-                    Provider = "Google",
-                    ProviderId = googleId,
-                    ProviderEmail = email,
-                    User = newUser.Entity,
-                });
-
-                await db.SaveChangesAsync();
-
-                user = newUser.Entity;
-            }
-
-            ClaimsIdentity identity = new([
-                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new(ClaimTypes.Email, user.Email ?? string.Empty),
-                new(ClaimTypes.Name, user.Name),
-            ], CookieAuthenticationDefaults.AuthenticationScheme);
-
-            principal.AddIdentity(identity);
-        };
-    });
-builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("WebOnly", policy => { policy.RequireAuthenticatedUser().AddAuthenticationSchemes(CookieScheme); })
-    .AddPolicy("ApiOnly",
-        policy => { policy.RequireAuthenticatedUser().AddAuthenticationSchemes(BearerScheme, ApiKeyScheme); });
-builder.Services.AddAntiforgery(options => { options.HeaderName = "X-XSRF-TOKEN"; });
+builder.Services.AddAuth(builder.Configuration);
 
 if (isDev)
 {
@@ -135,7 +43,7 @@ if (isDev)
                 RouteId = "devServer",
                 ClusterId = "devCluster",
                 Match = new RouteMatch { Path = "{**catchall}" },
-            }
+            },
         ], [
             new ClusterConfig
             {
@@ -148,10 +56,10 @@ if (isDev)
                         {
                             Address = builder.Configuration["Dev:Web:ServerUrl"] ?? "http://localhost:3001"
                         }
-                    }
+                    },
                 },
                 HttpRequest = new ForwarderRequestConfig { ActivityTimeout = TimeSpan.MaxValue },
-            }
+            },
         ]);
 }
 
@@ -190,9 +98,10 @@ app.MapGet("/auth/login", (string? provider, string? returnUrl) =>
 
 app.MapPost("/auth/logout", async context =>
 {
-    await context.SignOutAsync(CookieScheme);
+    await context.SignOutAsync(AuthConfiguration.CookiePolicyScheme);
     context.Response.Redirect("/");
-}).RequireAuthorization(policy => policy.RequireAuthenticatedUser().AddAuthenticationSchemes(CookieScheme));
+}).RequireAuthorization(policy
+    => policy.RequireAuthenticatedUser().AddAuthenticationSchemes(AuthConfiguration.CookiePolicyScheme));
 
 app.MapGet("/api/users/{id}", async (HttpContext context, AppDbContext db, string id) =>
     {
@@ -301,6 +210,8 @@ internal class User
 
 internal class Account
 {
+    public const string ProviderGoogle = "Google";
+
     public Guid Id { get; set; }
     public required string Provider { get; set; }
     public required string ProviderId { get; set; }
