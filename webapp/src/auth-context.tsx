@@ -1,6 +1,6 @@
 import {
   createContext,
-  useContext,
+  use,
   useEffect,
   useReducer,
   type ActionDispatch,
@@ -105,7 +105,7 @@ async function authLogout(dispatch: Dispatch): Promise<void> {
 }
 
 function useAuth() {
-  const context = useContext(AuthContext);
+  const context = use(AuthContext);
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider.");
   }

@@ -12,6 +12,12 @@ export class ApiError extends Error {
   }
 }
 
+export function isAuthError(error: unknown): boolean {
+  return (
+    error instanceof ApiError && (error.code === 401 || error.code === 403)
+  );
+}
+
 export type AuthProvider = "google";
 
 function createCsrfTokenHeader() {
@@ -35,12 +41,6 @@ export async function logout(): Promise<void> {
       response.status,
     );
   }
-}
-
-export function isAuthError(error: unknown): boolean {
-  return (
-    error instanceof ApiError && (error.code === 401 || error.code === 403)
-  );
 }
 
 export async function getAuthenticatedUser(): Promise<User> {

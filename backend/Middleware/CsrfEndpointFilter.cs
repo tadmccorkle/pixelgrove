@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Csm.PixelGrove.Auth;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -20,7 +21,13 @@ internal partial class CsrfEndpointFilter : IEndpointFilter
     {
         var request = context.HttpContext.Request;
 
-        if (request.Cookies.ContainsKey("auth") && !request.Headers.ContainsKey("Authorization"))
+        var isRequestSafe = HttpMethods.IsGet(request.Method) ||
+                            HttpMethods.IsHead(request.Method) ||
+                            HttpMethods.IsOptions(request.Method) ||
+                            HttpMethods.IsTrace(request.Method);
+        var hasAuthCookie = request.Cookies.ContainsKey(AuthConfiguration.AuthCookieName);
+
+        if (!isRequestSafe && hasAuthCookie)
         {
             try
             {
@@ -28,14 +35,14 @@ internal partial class CsrfEndpointFilter : IEndpointFilter
             }
             catch (AntiforgeryValidationException ex)
             {
-                this.LogInvalidAntiforgeryCookie(ex.Message);
-                return Results.Unauthorized();
+                this.LogInvalidAntiforgeryToken(ex.Message, request.Path);
+                return Results.StatusCode(StatusCodes.Status403Forbidden);
             }
         }
 
         return await next(context);
     }
 
-    [LoggerMessage(LogLevel.Error, "Invalid antiforgery cookie: {exMessage}")]
-    partial void LogInvalidAntiforgeryCookie(string exMessage);
+    [LoggerMessage(LogLevel.Warning, "Invalid antiforgery token. Path: {Path}. Reason: {Message}")]
+    partial void LogInvalidAntiforgeryToken(string message, string path);
 }

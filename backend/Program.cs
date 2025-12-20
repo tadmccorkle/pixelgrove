@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Security.Claims;
-using Csm.PixelGrove;
+using Csm.PixelGrove.Auth;
 using Csm.PixelGrove.Middleware;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -12,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Forwarder;
 
@@ -19,7 +18,6 @@ var builder = WebApplication.CreateBuilder(args);
 var isDev = builder.Environment.IsDevelopment();
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("App Database"));
-builder.Services.AddScoped<GoogleOAuthEvents>();
 
 builder.Services.AddOpenApi();
 builder.Services.AddAuth(builder.Configuration);
@@ -93,95 +91,60 @@ app.MapGet("/auth/login", (string? provider, string? returnUrl) =>
         "google" or _ => GoogleDefaults.AuthenticationScheme,
     };
 
-    return Results.Challenge(new() { RedirectUri = returnUrl ?? "/", }, [scheme]);
-}).AddEndpointFilter<CsrfEndpointFilter>();
+    var redirectUri = "/";
+    if (!string.IsNullOrEmpty(returnUrl) && IsRelativeUri(returnUrl) && !returnUrl.StartsWith("//"))
+    {
+        redirectUri = returnUrl.StartsWith('/') ? returnUrl : $"/{returnUrl}";
+    }
 
-app.MapPost("/auth/logout", async context =>
+    return Results.Challenge(new AuthenticationProperties { RedirectUri = redirectUri }, [scheme]);
+
+    static bool IsRelativeUri(string url) => Uri.TryCreate(url, UriKind.Relative, out _);
+});
+
+app.MapPost("/auth/logout", async (HttpContext context, ILoggerFactory loggerFactory) =>
 {
+    if (!context.User.TryGetAppUserId(out var userId))
+        userId = Guid.Empty;
+
     await context.SignOutAsync(AuthConfiguration.CookiePolicyScheme);
+
+    loggerFactory
+        .CreateLogger("Auth")
+        .LogInformation("User {UserId} logged out", userId);
+
     context.Response.Redirect("/");
-}).RequireAuthorization(policy
-    => policy.RequireAuthenticatedUser().AddAuthenticationSchemes(AuthConfiguration.CookiePolicyScheme));
+}).AddEndpointFilter<IEndpointConventionBuilder, CsrfEndpointFilter>().RequireAuthorization();
 
 app.MapGet("/api/users/{id}", async (HttpContext context, AppDbContext db, string id) =>
+{
+    if (id == "me")
     {
-        if (id == "me")
+        if (!(context.User.Identity?.IsAuthenticated ?? false))
         {
-            if (!(context.User.Identity?.IsAuthenticated ?? false))
-            {
-                return Results.Unauthorized();
-            }
-
-            var userIdValue = context.User
-                .FindFirst(c => c is { Type: ClaimTypes.NameIdentifier, Issuer: ClaimsIdentity.DefaultIssuer })?.Value;
-            if (userIdValue is null || !Guid.TryParse(userIdValue, out var userId))
-            {
-                return Results.BadRequest("");
-            }
-
-            var user = await db.Users.FindAsync(userId);
-            return user is not null
-                ? Results.Ok(user)
-                : Results.NotFound();
-        }
-
-        if (Guid.TryParse(id, out var _))
-        {
-            // TODO(tad): support getting other user info
             return Results.Unauthorized();
         }
 
-        return Results.BadRequest("Invalid user id.");
-    })
-    .RequireAuthorization()
-    .AddEndpointFilter<CsrfEndpointFilter>();
+        if (!context.User.TryGetAppUserId(out var userId))
+        {
+            return Results.BadRequest("Authenticated user has invalid or missing id claim.");
+        }
 
-app.MapGet("/weatherforecast", () =>
+        var user = await db.Users.FindAsync(userId);
+        return user is not null
+            ? Results.Ok(user)
+            : Results.NotFound();
+    }
+
+    if (Guid.TryParse(id, out _))
     {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55)
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast")
-    .RequireAuthorization()
-    .AddEndpointFilter<CsrfEndpointFilter>();
+        return Results.StatusCode(StatusCodes.Status501NotImplemented);
+    }
 
-app.MapGet("/test", async (HttpContext context, AppDbContext db) =>
-{
-    // return Results.Ok(
-    //     new { id = context.User.Identity, user = context.User.Claims.Select(c => $"{c.Type}: {c.Value} ({c.Issuer})").ToArray() });
-    // var tokens = af.GetAndStoreTokens(context);
-    // return Results.Ok(new
-    // {
-    //     token = tokens.RequestToken,
-    //     cookie = tokens.CookieToken,
-    //     headerName = tokens.HeaderName,
-    // });
+    return Results.BadRequest("Invalid user id.");
 });
 
 app.Run();
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public WeatherForecast(DateOnly Date, int TemperatureC)
-        : this(Date, TemperatureC, NextSummary)
-    {
-    }
-
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-
-    private static string NextSummary => Summaries[Random.Shared.Next(Summaries.Length)];
-
-    private static readonly string[] Summaries =
-    [
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    ];
-}
 
 internal class AppDbContext : DbContext
 {
