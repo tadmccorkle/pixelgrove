@@ -8,7 +8,7 @@ namespace Csm.PixelGrove.Middleware;
 
 internal partial class CsrfEndpointFilter : IEndpointFilter
 {
-    private readonly ILogger logger;
+    private readonly ILogger<CsrfEndpointFilter> logger;
     private readonly IAntiforgery antiforgery;
 
     public CsrfEndpointFilter(ILogger<CsrfEndpointFilter> logger, IAntiforgery antiforgery)

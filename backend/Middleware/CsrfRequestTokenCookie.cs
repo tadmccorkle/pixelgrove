@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Csm.PixelGrove.Middleware;
 
-public class CsrfRequestTokenCookie
+internal class CsrfRequestTokenCookie
 {
     private readonly RequestDelegate next;
     private readonly IAntiforgery antiforgery;

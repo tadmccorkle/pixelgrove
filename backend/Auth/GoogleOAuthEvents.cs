@@ -1,6 +1,7 @@
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Csm.PixelGrove.Data;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
@@ -9,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Csm.PixelGrove.Auth;
 
-internal partial class GoogleOAuthEvents : OAuthEvents
+internal sealed partial class GoogleOAuthEvents : OAuthEvents
 {
     private readonly AppDbContext db;
     private readonly ILogger logger;
