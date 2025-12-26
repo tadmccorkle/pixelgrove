@@ -1,3 +1,6 @@
+// Copyright (c) 2026 by Tad McCorkle
+// Licensed under the MIT license.
+
 using Csm.PixelGrove;
 using Csm.PixelGrove.Auth;
 using Csm.PixelGrove.Data;
@@ -32,6 +35,7 @@ if (isDev)
 }
 
 app.UseExceptionHandler();
+app.UseStatusCodePages();
 app.UseHttpsRedirection();
 app.UseAntiforgery();
 app.UseMiddleware<CsrfRequestTokenCookie>();

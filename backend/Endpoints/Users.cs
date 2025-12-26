@@ -1,3 +1,6 @@
+// Copyright (c) 2026 by Tad McCorkle
+// Licensed under the MIT license.
+
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Csm.PixelGrove.Auth;
@@ -13,7 +16,10 @@ internal class Users : IEndpoint
 {
     public static void Map(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/users/{id}", async (HttpContext context, AppDbContext db, string id) =>
+        app.MapGet("/api/users/{id}", async (
+            HttpContext context,
+            AppDbContext db,
+            string id) =>
         {
             if (id == "me")
             {
@@ -24,7 +30,9 @@ internal class Users : IEndpoint
 
                 if (!context.User.TryGetAppUserId(out var userId))
                 {
-                    return Results.BadRequest("Authenticated user has invalid or missing id claim.");
+                    return Results.Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        detail: "Authenticated user has invalid or missing id claim.");
                 }
 
                 var user = await db.Users.FindAsync(userId);
@@ -38,7 +46,9 @@ internal class Users : IEndpoint
                 return Results.StatusCode(StatusCodes.Status501NotImplemented);
             }
 
-            return Results.BadRequest("Invalid user id.");
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: "Invalid user id.");
         });
     }
 }

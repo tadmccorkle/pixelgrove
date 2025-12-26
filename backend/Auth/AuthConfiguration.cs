@@ -1,3 +1,6 @@
+// Copyright (c) 2026 by Tad McCorkle
+// Licensed under the MIT license.
+
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;

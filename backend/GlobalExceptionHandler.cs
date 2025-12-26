@@ -1,3 +1,6 @@
+// Copyright (c) 2026 by Tad McCorkle
+// Licensed under the MIT license.
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,11 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace Csm.PixelGrove;
-
-internal class Result
-{
-    private Result() { }
-}
 
 internal sealed partial class GlobalExceptionHandler : IExceptionHandler
 {
@@ -39,8 +37,6 @@ internal sealed partial class GlobalExceptionHandler : IExceptionHandler
             Exception = exception,
             ProblemDetails = new ProblemDetails
             {
-                Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
-                Title = "Internal Server Error",
                 Detail = exception.Message,
             },
         });

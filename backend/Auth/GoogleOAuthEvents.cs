@@ -1,3 +1,6 @@
+// Copyright (c) 2026 by Tad McCorkle
+// Licensed under the MIT license.
+
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -23,21 +26,19 @@ internal sealed partial class GoogleOAuthEvents : OAuthEvents
 
     public override async Task TicketReceived(TicketReceivedContext context)
     {
-        var path = context.HttpContext.Request.Path.ToString();
-
         try
         {
             var principal = context.Principal;
             if (principal == null)
             {
-                this.HandleError(context, "Ticket missing claims principal.", path);
+                this.HandleError(context, "Ticket missing claims principal.");
                 return;
             }
 
             var googleId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
             if (googleId == null)
             {
-                this.HandleError(context, "Ticket claims principal missing name identifier.", path);
+                this.HandleError(context, "Ticket claims principal missing name identifier.");
                 return;
             }
 
@@ -49,7 +50,7 @@ internal sealed partial class GoogleOAuthEvents : OAuthEvents
 
             if (account is not null && user is null)
             {
-                this.HandleError(context, $"Existing account {account.Id} has no associated user.", path);
+                this.HandleError(context, $"Existing account {account.Id} has no associated user.");
                 return;
             }
 
@@ -59,7 +60,7 @@ internal sealed partial class GoogleOAuthEvents : OAuthEvents
                 var email = principal.FindFirstValue(ClaimTypes.Email);
                 if (name == null || email == null)
                 {
-                    this.HandleError(context, "Ticket claims principal missing name and/or email.", path);
+                    this.HandleError(context, "Ticket claims principal missing name and/or email.");
                     return;
                 }
 
@@ -93,14 +94,19 @@ internal sealed partial class GoogleOAuthEvents : OAuthEvents
         }
         catch (Exception ex)
         {
-            this.LogException(ex);
-            this.HandleError(context, "Unexpected exception when processing Google OAuth ticket.", path);
+            this.LogException(ex, context.HttpContext.Request.Path.ToString());
+            HandleErrorResponse(context, ExceptionDescription);
         }
     }
 
-    private void HandleError(TicketReceivedContext context, string error, string path)
+    private void HandleError(TicketReceivedContext context, string error)
     {
-        this.LogError(error, path);
+        this.LogError(error, context.HttpContext.Request.Path.ToString());
+        HandleErrorResponse(context, error);
+    }
+
+    private static void HandleErrorResponse(TicketReceivedContext context, string error)
+    {
         context.Fail(error);
         context.HandleResponse();
         context.Response.Redirect("/login?error=auth");
@@ -112,6 +118,8 @@ internal sealed partial class GoogleOAuthEvents : OAuthEvents
     [LoggerMessage(LogLevel.Error, "Google OAuth error: {Error}. Path: {Path}")]
     partial void LogError(string error, string path);
 
-    [LoggerMessage(LogLevel.Error, "Unexpected exception occurred when processing Google OAuth ticket.")]
-    partial void LogException(Exception ex);
+    private const string ExceptionDescription = "Unexpected exception occurred when processing Google OAuth ticket.";
+
+    [LoggerMessage(LogLevel.Error, $"{ExceptionDescription} Path: {{Path}}")]
+    partial void LogException(Exception ex, string path);
 }

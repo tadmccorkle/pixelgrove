@@ -1,3 +1,6 @@
+// Copyright (c) 2026 by Tad McCorkle
+// Licensed under the MIT license.
+
 using Microsoft.AspNetCore.Routing;
 
 namespace Csm.PixelGrove.Endpoints;

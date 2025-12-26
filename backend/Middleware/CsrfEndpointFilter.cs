@@ -1,3 +1,6 @@
+// Copyright (c) 2026 by Tad McCorkle
+// Licensed under the MIT license.
+
 using System.Threading.Tasks;
 using Csm.PixelGrove.Auth;
 using Microsoft.AspNetCore.Antiforgery;
@@ -36,7 +39,9 @@ internal partial class CsrfEndpointFilter : IEndpointFilter
             catch (AntiforgeryValidationException ex)
             {
                 this.LogInvalidAntiforgeryToken(ex.Message, request.Path);
-                return Results.StatusCode(StatusCodes.Status403Forbidden);
+                return Results.Problem(
+                    statusCode: StatusCodes.Status403Forbidden,
+                    detail: "Invalid antiforgery token.");
             }
         }
 
